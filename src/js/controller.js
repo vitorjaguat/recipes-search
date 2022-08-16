@@ -1,8 +1,11 @@
+//The functions in this module are called controlSomething because we are using the Model-View-Controller Architecture Pattern. They could also be called handleSomething, because what they actually do is to handle events whenever some event happens.
+
 import * as model from './model.js';
 import recipeView from './views/recipeView.js';
 import searchView from './views/searchView.js';
 import resultsView from './views/resultsView.js';
 import paginationView from './views/paginationView.js';
+import bookmarksView from './views/bookmarksView.js';
 
 
 import 'core-js/stable';
@@ -19,6 +22,9 @@ const controlRecipes = async function () {
     //window.location is the whole url address!
     if (!id) return;
     recipeView.renderSpinner();
+
+    //0) Update results view to mark selected search result:
+    resultsView.update(model.getSearchResultsPage());
 
     //1) Loading recipe:
     await model.loadRecipe(id);
@@ -59,8 +65,44 @@ const controlSearchResults = async function () {
   }
 }
 
+const controlPagination = function (goToPage) {
+  //1) Render NEW results:
+  resultsView.render(model.getSearchResultsPage(goToPage));
+
+  //2) Render NEW pagination buttons:
+  paginationView.render(model.state.search);
+}
+
+const controlServings = function (newServings) {
+  //Update the recipe servings (in state):
+  model.updateServings(newServings);
+
+  //Update the recipe view:
+  // recipeView.render(model.state.recipe);
+  recipeView.update(model.state.recipe);
+}
+
+const controlAddBookmark = function () {
+  //1) Add/remove bookmark:
+  if (!model.state.recipe.bookmarked)
+    model.addBookmark(model.state.recipe);
+  else {
+    model.deleteBookmark(model.state.recipe.id)
+  };
+
+  //2) Update recipe view:
+  recipeView.update(model.state.recipe);
+
+  //3) Render bookmark:
+  bookmarksView.render(model.state.bookmarks)
+}
+
 const init = function () {
   recipeView.addHandlerRender(controlRecipes);
+  recipeView.addHandlerUpdateServings(controlServings);
+  recipeView.addHandlerAddBookmark(controlAddBookmark);
   searchView.addHandlerSearch(controlSearchResults);
+  paginationView.addHandlerClick(controlPagination);
+
 }
 init();
